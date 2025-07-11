@@ -1,7 +1,35 @@
-const express = require('express');
+const router = require('express').Router();
 const typesenseClient = require('./typesenseClient');
-const router = express.Router();
 
+
+router.get('/search', async (req, res) => {
+  const query = req.query.q ?? '';
+  const filters = req.query.filters;
+
+  const searchParams = {
+    q: query,
+    query_by: 'title,authors', 
+    per_page: 10,
+    prefix: 'true',       
+    num_typos: 2,         
+  };
+
+  if (filters) {
+    searchParams.filter_by = filters;
+  }
+
+  try {
+    const result = await typesenseClient
+      .collections('books')
+      .documents()
+      .search(searchParams);
+
+    res.status(200).json(result.hits);
+  } catch (error) {
+    console.error('Search Error:', error);
+    res.status(500).json({ error: 'Search failed', details: error.message });
+  }
+});
 
 router.get('/autocomplete', async (req, res) => {
   const query = req.query.q ?? '';
@@ -36,36 +64,6 @@ router.get('/autocomplete', async (req, res) => {
   } catch (error) {
     console.error('Autocomplete Error:', error);
     res.status(500).json({ error: 'Autocomplete failed', details: error.message });
-  }
-});
-
-
-router.get('/search', async (req, res) => {
-  const query = req.query.q ?? '';
-  const filters = req.query.filters;
-
-  const searchParams = {
-    q: query,
-    query_by: 'title,authors', 
-    per_page: 10,
-    prefix: 'true',       
-    num_typos: 2,         
-  };
-
-  if (filters) {
-    searchParams.filter_by = filters;
-  }
-
-  try {
-    const result = await typesenseClient
-      .collections('books')
-      .documents()
-      .search(searchParams);
-
-    res.status(200).json(result.hits);
-  } catch (error) {
-    console.error('Search Error:', error);
-    res.status(500).json({ error: 'Search failed', details: error.message });
   }
 });
 
